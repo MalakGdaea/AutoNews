@@ -3,6 +3,7 @@ from config import OPENAI_API_KEY, OUTPUT_DIR
 import os
 
 client = OpenAI(api_key=OPENAI_API_KEY)
+TTS_SPEED = float(os.getenv("TTS_SPEED", "0.92"))
 
 def generate_voiceover(script: str, filename: str) -> str:
     """Convert script text to MP3 voiceover using OpenAI TTS."""
@@ -16,7 +17,7 @@ def generate_voiceover(script: str, filename: str) -> str:
             model="tts-1-hd",
             voice="onyx",
             input=script,
-            speed=1.25         # Slightly faster = more TikTok energy
+            speed=TTS_SPEED
         )
 
         response.stream_to_file(output_path)

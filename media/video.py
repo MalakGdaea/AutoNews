@@ -1,4 +1,5 @@
 ﻿import os
+import re
 import textwrap
 
 import ffmpeg
@@ -9,8 +10,20 @@ from config import OUTPUT_DIR
 BACKGROUND_PATH = "media/backgrounds/channel_bg.mp4"
 VIDEO_WIDTH = 1080
 VIDEO_HEIGHT = 1920
-CAPTION_Y = 820
-CAPTION_FONT_SIZE = 56
+
+# Caption style (lower-third, readable)
+CAPTION_Y = 1260
+CAPTION_FONT_SIZE = 50
+CAPTION_WORDS_PER_CHUNK = 2
+CAPTION_START_DELAY = 0.45
+CAPTION_SIDE_PADDING = 70
+
+# Headline style (modern, bold, animated)
+HEADLINE_Y = 430
+HEADLINE_FONT_SIZE = 68
+HEADLINE_MAX_ITEMS = 4
+HEADLINE_FADE_TIME = 0.28
+HEADLINE_HOLD_TIME = 1.9
 
 
 def download_image(url: str, filename: str) -> str:
@@ -47,12 +60,66 @@ def _escape_drawtext(text: str) -> str:
     return escaped
 
 
-def _format_caption_chunk(text: str, line_width: int = 22, max_lines: int = 3) -> str:
+def _format_caption_chunk(text: str, line_width: int = 18, max_lines: int = 2) -> str:
     cleaned = " ".join(text.split())
     lines = textwrap.wrap(cleaned, width=line_width)
     if not lines:
         return ""
     return _escape_drawtext("\n".join(lines[:max_lines]))
+
+
+def _chunk_weight(text: str) -> float:
+    words = text.split()
+    punctuation_bonus = sum(text.count(p) for p in [",", ".", "?", "!", ":", ";"]) * 0.35
+    return max(1.0, len(words) + punctuation_bonus)
+
+
+def _contains_emphasis(text: str) -> bool:
+    words = re.findall(r"\b[A-Za-z]{3,}\b", text)
+    return any(word.isupper() for word in words) or ("!" in text) or ("?" in text)
+
+
+def _split_sentences(script: str) -> list[str]:
+    parts = re.split(r"(?<=[.!?])\s+", script.strip())
+    return [p.strip() for p in parts if p.strip()]
+
+
+def _headline_from_sentence(sentence: str, max_words: int = 6) -> str:
+    cleaned = re.sub(r"[^A-Za-z0-9'\-\s]", "", sentence)
+    words = cleaned.split()
+    if not words:
+        return ""
+    return " ".join(words[:max_words]).upper()
+
+
+def _build_headlines(script: str) -> list[str]:
+    sentences = _split_sentences(script)
+    candidates = []
+    for sentence in sentences:
+        if len(sentence.split()) < 4:
+            continue
+        h = _headline_from_sentence(sentence)
+        if h and h not in candidates:
+            candidates.append(h)
+        if len(candidates) >= HEADLINE_MAX_ITEMS:
+            break
+    return candidates
+
+
+def _fade_alpha_expr(start: float, end: float, fade_time: float = HEADLINE_FADE_TIME) -> str:
+    fade_in_end = start + fade_time
+    fade_out_start = end
+    fade_out_end = end + fade_time
+    return (
+        f"if(lt(t,{start:.2f}),0,"
+        f"if(lt(t,{fade_in_end:.2f}),(t-{start:.2f})/{fade_time:.2f},"
+        f"if(lt(t,{fade_out_start:.2f}),1,"
+        f"if(lt(t,{fade_out_end:.2f}),({fade_out_end:.2f}-t)/{fade_time:.2f},0))))"
+    )
+
+
+def _fade_up_y_expr(start: float, base_y: int = HEADLINE_Y, rise_px: int = 22) -> str:
+    return f"{base_y}+{rise_px}-{rise_px}*clip((t-{start:.2f})/{HEADLINE_FADE_TIME:.2f},0,1)"
 
 
 def generate_video(audio_path: str, filename: str, script: str = "", image_url: str = None) -> str:
@@ -95,6 +162,7 @@ def generate_video(audio_path: str, filename: str, script: str = "", image_url: 
 
         bg_video = bg_video.filter("colorchannelmixer", rr=0.5, gg=0.5, bb=0.5)
 
+        # Core channel overlays
         bg_video = (
             bg_video.drawtext(
                 text="WORLD NEWS 24",
@@ -117,31 +185,84 @@ def generate_video(audio_path: str, filename: str, script: str = "", image_url: 
             .drawtext(text="LIVE", fontcolor="white", fontsize=28, x=40, y=1778, font="Sans")
         )
 
+        # Animated headlines for key moments
+        if script:
+            headlines = _build_headlines(script)
+            if headlines:
+                timeline_start = 0.8
+                timeline_end = max(timeline_start + 1.0, duration - 0.8)
+                step = (timeline_end - timeline_start) / max(len(headlines), 1)
+                for i, headline in enumerate(headlines):
+                    start = timeline_start + (i * step)
+                    end = min(start + HEADLINE_HOLD_TIME, duration - 0.4)
+                    if end <= start:
+                        continue
+                    alpha_expr = _fade_alpha_expr(start, end)
+                    y_expr = _fade_up_y_expr(start)
+                    bg_video = (
+                        bg_video.filter(
+                            "drawbox",
+                            x=120,
+                            y=HEADLINE_Y - 16,
+                            w=840,
+                            h=95,
+                            color="0x000000@0.28",
+                            t="fill",
+                            enable=f"between(t,{start:.2f},{end + HEADLINE_FADE_TIME:.2f})",
+                        )
+                        .drawtext(
+                            text=_escape_drawtext(headline),
+                            fontcolor="0xFFE08A",
+                            fontsize=HEADLINE_FONT_SIZE,
+                            x="(w-text_w)/2",
+                            y=y_expr,
+                            font="Sans Bold",
+                            borderw=3,
+                            bordercolor="0x111111",
+                            alpha=alpha_expr,
+                        )
+                    )
+
+        # Phrase-by-phrase lower-third captions
         if script:
             words = script.split()
-            chunk_size = 4
+            chunk_size = CAPTION_WORDS_PER_CHUNK
             chunks = [" ".join(words[i : i + chunk_size]) for i in range(0, len(words), chunk_size)]
-            chunk_duration = duration / max(len(chunks), 1)
 
+            active_duration = max(0.0, duration - CAPTION_START_DELAY - 0.15)
+            weights = [_chunk_weight(chunk) for chunk in chunks]
+            total_weight = sum(weights) if weights else 1.0
+
+            elapsed = CAPTION_START_DELAY
             for i, chunk in enumerate(chunks):
                 text = _format_caption_chunk(chunk)
                 if not text:
                     continue
-                start_time = i * chunk_duration
-                end_time = start_time + chunk_duration
+
+                part_duration = active_duration * (weights[i] / total_weight)
+                start_time = elapsed
+                end_time = min(duration - 0.1, start_time + part_duration)
+                elapsed = end_time
+
+                is_emphasis = _contains_emphasis(chunk)
+                font_color = "0xFFE08A" if is_emphasis else "white"
+                box_color = "0x000000@0.60" if is_emphasis else "0x000000@0.46"
+                font_size = CAPTION_FONT_SIZE + (4 if is_emphasis else 0)
+
                 bg_video = bg_video.drawtext(
                     text=text,
-                    fontcolor="white",
-                    fontsize=CAPTION_FONT_SIZE,
+                    fontcolor=font_color,
+                    fontsize=font_size,
                     x="(w-text_w)/2",
                     y=CAPTION_Y,
                     font="Sans",
-                    borderw=4,
-                    bordercolor="black",
+                    borderw=3,
+                    bordercolor="0x101010",
                     box=1,
-                    boxcolor="black@0.5",
-                    boxborderw=10,
-                    line_spacing=18,
+                    boxcolor=box_color,
+                    boxborderw=14,
+                    line_spacing=14,
+                    alpha=f"if(lt(t,{start_time:.2f}),0,if(lt(t,{start_time + 0.10:.2f}),(t-{start_time:.2f})/0.10,1))",
                     enable=f"between(t,{start_time:.2f},{end_time:.2f})",
                 )
 
@@ -157,7 +278,7 @@ def generate_video(audio_path: str, filename: str, script: str = "", image_url: 
                 **{"b:a": "192k"},
                 ar=44100,
                 ac=2,
-                video_bitrate="4000k",
+                video_bitrate="4500k",
                 r=30,
                 pix_fmt="yuv420p",
                 movflags="+faststart",
