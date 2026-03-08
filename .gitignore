@@ -16,7 +16,7 @@ build/
 
 # Media & generated files
 media/backgrounds/
-*.mp4
+# *.mp4
 *.mp3
 *.wav
 *.srt
