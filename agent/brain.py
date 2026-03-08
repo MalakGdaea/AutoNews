@@ -35,7 +35,8 @@ def run_pipeline(limit: int = 3):
             "title": story["title"],
             "script": script,
             "caption": caption,
-            "url": story["url"]
+            "url": story["url"],
+            "image_url": story.get("image_url"),
         }
 
         results.append(result)
