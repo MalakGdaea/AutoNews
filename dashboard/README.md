@@ -1,0 +1,58 @@
+# AutoNews Dashboard
+
+Next.js 14 dashboard for monitoring generated posts and manually uploading ready videos.
+
+## Features
+
+- Monitor post volume and status
+- Recharts visualizations for 7-day frequency + status distribution
+- "Ready to Upload" queue:
+  - video preview
+  - copy caption + hashtags
+  - copy video path
+  - mark as manually uploaded
+- Topic preferences panel (stored in browser localStorage)
+
+## Setup
+
+1. Install dependencies:
+
+```bash
+cd dashboard
+npm install
+```
+
+2. Create `.env.local` from `.env.example`:
+
+```env
+NEXT_PUBLIC_SUPABASE_URL=...
+NEXT_PUBLIC_SUPABASE_ANON_KEY=...
+SUPABASE_SERVICE_ROLE_KEY=...
+PROJECT_ROOT=C:/Users/malak/Desktop/AutoNews
+```
+
+3. Start dev server:
+
+```bash
+npm run dev
+```
+
+Open `http://localhost:3000`.
+
+## Data expectations
+
+Reads from Supabase table `videos`:
+
+- `id`
+- `title`
+- `script`
+- `video_path`
+- `status`
+- `created_at`
+
+Manual upload action updates `status` to `manual_uploaded`.
+
+## Notes
+
+- Local video preview is served from `${PROJECT_ROOT}/output` only.
+- If `video_path` points outside `output/`, preview is blocked for safety.

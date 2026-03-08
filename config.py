@@ -22,3 +22,11 @@ REDIS_URL = os.getenv("REDIS_URL", "redis://localhost:6379")
 
 # Output
 OUTPUT_DIR = os.getenv("OUTPUT_DIR", "./output")
+
+# TikTok
+TIKTOK_CLIENT_KEY = os.getenv("TIKTOK_CLIENT_KEY")
+TIKTOK_CLIENT_SECRET = os.getenv("TIKTOK_CLIENT_SECRET")
+TIKTOK_REDIRECT_URI = os.getenv("TIKTOK_REDIRECT_URI")
+TIKTOK_ACCESS_TOKEN = os.getenv("TIKTOK_ACCESS_TOKEN")
+TIKTOK_REFRESH_TOKEN = os.getenv("TIKTOK_REFRESH_TOKEN")
+TIKTOK_DRY_RUN = os.getenv("TIKTOK_DRY_RUN", "true").lower() == "true"
