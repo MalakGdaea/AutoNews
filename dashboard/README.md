@@ -52,6 +52,18 @@ Reads from Supabase table `videos`:
 
 Manual upload action updates `status` to `manual_uploaded`.
 
+For topic targeting, create `pipeline_settings` once:
+
+```sql
+create table if not exists public.pipeline_settings (
+  key text primary key,
+  value jsonb not null default '{}'::jsonb,
+  updated_at timestamptz not null default now()
+);
+```
+
+The dashboard uses key `conflict_topics` in this table, and `agent/monitor.py` reads the same record before selecting stories.
+
 ## Notes
 
 - Local video preview is served from `${PROJECT_ROOT}/output` only.
