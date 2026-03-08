@@ -13,10 +13,10 @@ def generate_voiceover(script: str, filename: str) -> str:
 
     try:
         response = client.audio.speech.create(
-            model="tts-1-hd",   # HD model sounds more natural
-            voice="onyx",       # Best for news — deep, authoritative
+            model="tts-1-hd",
+            voice="onyx",
             input=script,
-            speed=1.1           # Slightly faster = more TikTok energy
+            speed=1.25         # Slightly faster = more TikTok energy
         )
 
         response.stream_to_file(output_path)

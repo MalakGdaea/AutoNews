@@ -67,6 +67,7 @@ def fetch_newsapi_stories():
                 "description": description or "",
                 "url": url,
                 "published_at": published_at,
+                "image_url": article.get("urlToImage", None),
                 "source": "newsapi",
                 "score": score_headline(title)
             })
