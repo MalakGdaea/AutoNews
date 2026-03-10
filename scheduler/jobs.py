@@ -12,6 +12,7 @@ from apscheduler.triggers.interval import IntervalTrigger
 from agent.brain import run_pipeline
 from media.audio import generate_voiceover
 from media.video import generate_video
+from media.storage import upload_video_to_storage
 from db.models import log_video
 
 scheduler = BlockingScheduler()
@@ -54,12 +55,16 @@ def run_full_pipeline():
                 print(f"❌ Video failed for: {result['title'][:50]}")
                 continue
 
-            # Step 4 — Log to database
+            # Step 4 — Upload to storage
+            storage_url = upload_video_to_storage(video_path, filename)
+
+            # Step 5 — Log to database
             log_video(
                 title=result["title"],
                 script=result["script"],
-                video_path=video_path,
-                status="ready"
+                video_path=storage_url or video_path,
+                status="ready",
+                video_url=storage_url
             )
 
             print(f"\n✅ Video ready: {video_path}")

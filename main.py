@@ -63,7 +63,7 @@ def run_once(
     log_video(
         title=title,
         script=script,
-        video_path=video_path,
+        video_path=storage_url or video_path,
         status="generated",
         video_url=storage_url,
     )
@@ -85,7 +85,7 @@ def run_once(
         log_video(
             title=title,
             script=script,
-            video_path=video_path,
+            video_path=storage_url or video_path,
             status=status,
             video_url=storage_url,
         )
@@ -99,7 +99,7 @@ def run_once(
         }
     except TikTokUploadError as exc:
         error_status = f"upload_failed: {exc}"
-        log_video(title=title, script=script, video_path=video_path, status=error_status)
+        log_video(title=title, script=script, video_path=storage_url or video_path, status=error_status, video_url=storage_url)
         raise
 
 
