@@ -115,7 +115,7 @@ def _add_branding(video_stream):
 
 
 def _add_persistent_header(video_stream, title: str, main_point: str):
-    title_text = escape_drawtext(textwrap.shorten(title, width=38, placeholder="..."))
+    title_text = escape_drawtext(textwrap.shorten(title, width=42, placeholder="..."))
     point_text = escape_drawtext(textwrap.shorten(main_point, width=42, placeholder="..."))
 
     return (
@@ -182,7 +182,14 @@ def _add_captions(video_stream, script: str, duration: float):
     return video_stream
 
 
-def generate_video(audio_path: str, filename: str, script: str = "", image_url: str = None) -> str:
+def generate_video(
+    audio_path: str,
+    filename: str,
+    *,
+    script: str = "",
+    image_url: str | None = None,
+    title: str = "",
+) -> str:
     print("Assembling video...")
     os.makedirs(OUTPUT_DIR, exist_ok=True)
     output_path = os.path.join(OUTPUT_DIR, f"{filename}.mp4")
@@ -198,7 +205,7 @@ def generate_video(audio_path: str, filename: str, script: str = "", image_url: 
         bg_video = _build_background(duration, image_path)
         bg_video = _add_branding(bg_video)
 
-        header_title = _clean_title_from_filename(filename)
+        header_title = title or _clean_title_from_filename(filename)
         header_point = _extract_main_point(script)
         bg_video = _add_persistent_header(bg_video, header_title, header_point)
 

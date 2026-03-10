@@ -53,6 +53,7 @@ def run_once(
         filename=filename,
         script=script,
         image_url=image_url,
+        title=title,
     )
     if not video_path:
         raise RuntimeError("Video generation failed.")
