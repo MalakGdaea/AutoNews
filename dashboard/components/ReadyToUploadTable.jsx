@@ -46,16 +46,24 @@ export default function ReadyToUploadTable({ initialItems }) {
       <div className="grid gap-4">
         {items.map((item) => (
           <article key={item.id} className="rounded-xl border border-zinc-700/70 bg-zinc-900/50 p-3 md:p-4">
-            <div className="grid gap-4 lg:grid-cols-[1.2fr,1.8fr]">
-              <div>
+            <div className="grid gap-4 lg:grid-cols-[minmax(220px,320px),1fr] lg:items-start">
+              <div className="lg:max-w-[320px]">
                 {item.previewUrl ? (
-                  <video className="w-full rounded-lg border border-zinc-700" controls preload="metadata" src={item.previewUrl} />
+                  <div className="mx-auto aspect-[9/16] overflow-hidden rounded-[1.75rem] border border-zinc-700 bg-black shadow-[0_20px_50px_rgba(0,0,0,0.35)]">
+                    <video
+                      className="h-full w-full object-cover"
+                      controls
+                      playsInline
+                      preload="metadata"
+                      src={item.previewUrl}
+                    />
+                  </div>
                 ) : (
-                  <div className="flex h-40 items-center justify-center rounded-lg border border-dashed border-zinc-700 text-sm text-muted">
+                  <div className="flex aspect-[9/16] items-center justify-center rounded-[1.75rem] border border-dashed border-zinc-700 text-sm text-muted">
                     Preview unavailable
                   </div>
                 )}
-                <p className="mt-2 font-[var(--font-mono)] text-xs text-muted">{item.videoPath || "No file path"}</p>
+                <p className="mt-3 break-all font-[var(--font-mono)] text-xs text-muted">{item.videoPath || "No file path"}</p>
               </div>
 
               <div className="space-y-3">
