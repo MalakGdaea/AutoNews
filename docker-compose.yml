@@ -1,0 +1,11 @@
+version: '3.8'
+
+services:
+  autonews:
+    build: .
+    env_file:
+      - .env
+    volumes:
+      - ./output:/app/output
+      - ./media:/app/media
+    command: python scheduler/jobs.py

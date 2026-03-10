@@ -1,0 +1,11 @@
+python-dotenv
+requests
+feedparser
+newsapi-python
+ffmpeg-python
+APScheduler
+supabase
+openai
+elevenlabs
+pydantic
+typing-extensions
