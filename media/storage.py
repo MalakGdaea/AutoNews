@@ -36,7 +36,7 @@ def upload_video_to_storage(local_path: str, filename: str) -> str | None:
             client.storage.from_(SUPABASE_STORAGE_BUCKET).upload(
                 object_name,
                 file_handle,
-                {"content-type": "video/mp4", "upsert": True},
+                {"content-type": "video/mp4", "upsert": "true"},
             )
     except Exception as exc:
         print(f"Storage upload failed: {exc}")
