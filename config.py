@@ -16,6 +16,9 @@ NEWS_API_KEY = os.getenv("NEWS_API_KEY")
 # Database
 SUPABASE_URL = os.getenv("SUPABASE_URL")
 SUPABASE_KEY = os.getenv("SUPABASE_KEY")
+SUPABASE_STORAGE_BUCKET = os.getenv("SUPABASE_STORAGE_BUCKET", "")
+SUPABASE_STORAGE_PUBLIC = os.getenv("SUPABASE_STORAGE_PUBLIC", "true").lower() == "true"
+SUPABASE_STORAGE_SIGNED_EXPIRES = int(os.getenv("SUPABASE_STORAGE_SIGNED_EXPIRES", "3600"))
 
 # Redis
 REDIS_URL = os.getenv("REDIS_URL", "redis://localhost:6379")

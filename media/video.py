@@ -19,10 +19,16 @@ HEADER_BOX_W = 940
 HEADER_BOX_H = 190
 HEADER_TITLE_SIZE = 48
 HEADER_POINT_SIZE = 40
+HEADER_TITLE_WRAP = 28
+HEADER_POINT_WRAP = 36
+HEADER_TITLE_MAX_LINES = 2
+HEADER_POINT_MAX_LINES = 2
 
 # Lower-third captions
 CAPTION_Y = 1270
 CAPTION_FONT_SIZE = 48
+FONT_REGULAR = "DejaVu Sans"
+FONT_BOLD = "DejaVu Sans Bold"
 
 
 def download_image(url: str, filename: str) -> str:
@@ -63,6 +69,15 @@ def _extract_main_point(script: str, max_words: int = 9) -> str:
     return short.rstrip(".,!?") if short else "Top Story Update"
 
 
+def _header_text(text: str, *, wrap_width: int, max_lines: int) -> tuple[str, int]:
+    cleaned = " ".join(text.split())
+    if not cleaned:
+        return ("", 0)
+    lines = textwrap.wrap(cleaned, width=wrap_width)
+    trimmed = lines[:max_lines]
+    return (escape_drawtext("\n".join(trimmed)), len(trimmed))
+
+
 def _build_background(duration: float, image_path: str | None):
     if image_path:
         print("Background: news image")
@@ -81,11 +96,18 @@ def _build_background(duration: float, image_path: str | None):
             )
         )
 
-    print("Background: channel default video")
+    if os.path.exists(BACKGROUND_PATH):
+        print("Background: channel default video")
+        return (
+            ffmpeg.input(BACKGROUND_PATH, stream_loop=-1, t=duration)
+            .video.filter("scale", VIDEO_WIDTH, VIDEO_HEIGHT, force_original_aspect_ratio="increase")
+            .filter("crop", VIDEO_WIDTH, VIDEO_HEIGHT)
+        )
+
+    print("Background: fallback color (missing channel_bg.mp4)")
     return (
-        ffmpeg.input(BACKGROUND_PATH, stream_loop=-1, t=duration)
-        .video.filter("scale", VIDEO_WIDTH, VIDEO_HEIGHT, force_original_aspect_ratio="increase")
-        .filter("crop", VIDEO_WIDTH, VIDEO_HEIGHT)
+        ffmpeg.input(f"color=c=#111111:s={VIDEO_WIDTH}x{VIDEO_HEIGHT}:r=30", f="lavfi", t=duration)
+        .video
     )
 
 
@@ -98,7 +120,7 @@ def _add_branding(video_stream):
             fontsize=36,
             x="(w-text_w)/2",
             y=70,
-            font="Sans",
+            font=FONT_REGULAR,
             alpha=0.9,
         )
         .filter("drawbox", x=0, y=1750, w=VIDEO_WIDTH, h=80, color="0xCC0000@0.9", t="fill")
@@ -108,15 +130,27 @@ def _add_branding(video_stream):
             fontsize=38,
             x="(w-text_w)/2",
             y=1770,
-            font="Sans",
+            font=FONT_REGULAR,
         )
         .drawtext(text="LIVE", fontcolor="white", fontsize=28, x=40, y=1778, font="Sans")
     )
 
 
 def _add_persistent_header(video_stream, title: str, main_point: str):
-    title_text = escape_drawtext(textwrap.shorten(title, width=42, placeholder="..."))
-    point_text = escape_drawtext(textwrap.shorten(main_point, width=42, placeholder="..."))
+    title_text, title_lines = _header_text(
+        title,
+        wrap_width=HEADER_TITLE_WRAP,
+        max_lines=HEADER_TITLE_MAX_LINES,
+    )
+    point_text, point_lines = _header_text(
+        main_point,
+        wrap_width=HEADER_POINT_WRAP,
+        max_lines=HEADER_POINT_MAX_LINES,
+    )
+
+    title_y = HEADER_BOX_Y + 28
+    line_gap = 6
+    point_y = title_y + (max(1, title_lines) * (HEADER_TITLE_SIZE + line_gap)) + 8
 
     return (
         video_stream.filter(
@@ -133,20 +167,22 @@ def _add_persistent_header(video_stream, title: str, main_point: str):
             fontcolor="0xFFE08A",
             fontsize=HEADER_TITLE_SIZE,
             x=HEADER_BOX_X + 28,
-            y=HEADER_BOX_Y + 34,
-            font="Sans Bold",
+            y=title_y,
+            font=FONT_BOLD,
             borderw=2,
             bordercolor="0x101010",
+            line_spacing=10,
         )
         .drawtext(
             text=point_text,
             fontcolor="white",
             fontsize=HEADER_POINT_SIZE,
             x=HEADER_BOX_X + 28,
-            y=HEADER_BOX_Y + 98,
-            font="Sans",
+            y=point_y,
+            font=FONT_REGULAR,
             borderw=2,
             bordercolor="0x101010",
+            line_spacing=8,
         )
     )
 
@@ -169,7 +205,7 @@ def _add_captions(video_stream, script: str, duration: float):
             fontsize=CAPTION_FONT_SIZE,
             x="(w-text_w)/2",
             y=CAPTION_Y,
-            font="Sans",
+            font=FONT_REGULAR,
             borderw=3,
             bordercolor="0x101010",
             box=1,
@@ -213,7 +249,7 @@ def generate_video(
 
         audio = ffmpeg.input(audio_path).audio.filter("aresample", 44100).filter("volume", 1.2)
 
-        (
+        try:
             ffmpeg.output(
                 bg_video,
                 audio,
@@ -230,8 +266,20 @@ def generate_video(
                 t=duration,
                 shortest=None,
                 **{"y": None},
-            ).run(quiet=True)
-        )
+            ).run(quiet=True, capture_stderr=True)
+        except ffmpeg.Error as ffmpeg_exc:
+            try:
+                stderr = ffmpeg_exc.stderr.decode("utf-8", errors="ignore")
+            except Exception:
+                stderr = str(ffmpeg_exc)
+            print(f"FFmpeg stderr: {stderr}")
+            raise
+        finally:
+            if image_path and os.path.exists(image_path):
+                try:
+                    os.remove(image_path)
+                except Exception as exc:
+                    print(f"Temp image cleanup failed: {exc}")
 
         size_mb = os.path.getsize(output_path) / (1024 * 1024)
         print(f"Video saved -> {output_path} ({size_mb:.1f} MB)")

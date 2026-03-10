@@ -1,12 +1,18 @@
+import os
+import re
+import sys
+from datetime import datetime
+
+ROOT_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
+if ROOT_DIR not in sys.path:
+    sys.path.insert(0, ROOT_DIR)
+
 from apscheduler.schedulers.blocking import BlockingScheduler
 from apscheduler.triggers.interval import IntervalTrigger
 from agent.brain import run_pipeline
 from media.audio import generate_voiceover
 from media.video import generate_video
 from db.models import log_video
-import re
-import os
-from datetime import datetime
 
 scheduler = BlockingScheduler()
 
