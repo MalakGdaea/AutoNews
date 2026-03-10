@@ -94,11 +94,18 @@ def _build_background(duration: float, image_path: str | None):
             )
         )
 
-    print("Background: channel default video")
+    if os.path.exists(BACKGROUND_PATH):
+        print("Background: channel default video")
+        return (
+            ffmpeg.input(BACKGROUND_PATH, stream_loop=-1, t=duration)
+            .video.filter("scale", VIDEO_WIDTH, VIDEO_HEIGHT, force_original_aspect_ratio="increase")
+            .filter("crop", VIDEO_WIDTH, VIDEO_HEIGHT)
+        )
+
+    print("Background: fallback color (missing channel_bg.mp4)")
     return (
-        ffmpeg.input(BACKGROUND_PATH, stream_loop=-1, t=duration)
-        .video.filter("scale", VIDEO_WIDTH, VIDEO_HEIGHT, force_original_aspect_ratio="increase")
-        .filter("crop", VIDEO_WIDTH, VIDEO_HEIGHT)
+        ffmpeg.input(f"color=c=#111111:s={VIDEO_WIDTH}x{VIDEO_HEIGHT}:r=30", f="lavfi", t=duration)
+        .video
     )
 
 
@@ -240,7 +247,7 @@ def generate_video(
 
         audio = ffmpeg.input(audio_path).audio.filter("aresample", 44100).filter("volume", 1.2)
 
-        (
+        try:
             ffmpeg.output(
                 bg_video,
                 audio,
@@ -257,8 +264,20 @@ def generate_video(
                 t=duration,
                 shortest=None,
                 **{"y": None},
-            ).run(quiet=True)
-        )
+            ).run(quiet=True, capture_stderr=True)
+        except ffmpeg.Error as ffmpeg_exc:
+            try:
+                stderr = ffmpeg_exc.stderr.decode("utf-8", errors="ignore")
+            except Exception:
+                stderr = str(ffmpeg_exc)
+            print(f"FFmpeg stderr: {stderr}")
+            raise
+        finally:
+            if image_path and os.path.exists(image_path):
+                try:
+                    os.remove(image_path)
+                except Exception as exc:
+                    print(f"Temp image cleanup failed: {exc}")
 
         size_mb = os.path.getsize(output_path) / (1024 * 1024)
         print(f"Video saved -> {output_path} ({size_mb:.1f} MB)")
