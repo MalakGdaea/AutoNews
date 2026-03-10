@@ -250,23 +250,21 @@ def generate_video(
         audio = ffmpeg.input(audio_path).audio.filter("aresample", 44100).filter("volume", 1.2)
 
         try:
-            ffmpeg.output(
-                bg_video,
-                audio,
-                output_path,
-                vcodec="libx264",
-                acodec="aac",
-                **{"b:a": "192k"},
-                ar=44100,
-                ac=2,
-                video_bitrate="4500k",
-                r=30,
-                pix_fmt="yuv420p",
-                movflags="+faststart",
-                t=duration,
-                shortest=None,
-                **{"y": None},
-            ).run(quiet=True, capture_stderr=True)
+           ffmpeg.output(
+               bg_video,
+               audio,
+               output_path,
+               vcodec="libx264",
+               acodec="aac",
+               **{"b:a": "192k"},
+               ar=44100,
+               ac=2,
+               video_bitrate="4500k",
+               r=30,
+               pix_fmt="yuv420p",
+               movflags="+faststart",
+               t=duration,
+           ).run(quiet=True, capture_stderr=True, overwrite_output=True)
         except ffmpeg.Error as ffmpeg_exc:
             try:
                 stderr = ffmpeg_exc.stderr.decode("utf-8", errors="ignore")
