@@ -19,6 +19,10 @@ HEADER_BOX_W = 940
 HEADER_BOX_H = 190
 HEADER_TITLE_SIZE = 48
 HEADER_POINT_SIZE = 40
+HEADER_TITLE_WRAP = 28
+HEADER_POINT_WRAP = 36
+HEADER_TITLE_MAX_LINES = 2
+HEADER_POINT_MAX_LINES = 2
 
 # Lower-third captions
 CAPTION_Y = 1270
@@ -61,6 +65,15 @@ def _extract_main_point(script: str, max_words: int = 9) -> str:
     words = first_sentence.split()
     short = " ".join(words[:max_words]).strip()
     return short.rstrip(".,!?") if short else "Top Story Update"
+
+
+def _header_text(text: str, *, wrap_width: int, max_lines: int) -> tuple[str, int]:
+    cleaned = " ".join(text.split())
+    if not cleaned:
+        return ("", 0)
+    lines = textwrap.wrap(cleaned, width=wrap_width)
+    trimmed = lines[:max_lines]
+    return (escape_drawtext("\n".join(trimmed)), len(trimmed))
 
 
 def _build_background(duration: float, image_path: str | None):
@@ -115,8 +128,20 @@ def _add_branding(video_stream):
 
 
 def _add_persistent_header(video_stream, title: str, main_point: str):
-    title_text = escape_drawtext(textwrap.shorten(title, width=42, placeholder="..."))
-    point_text = escape_drawtext(textwrap.shorten(main_point, width=42, placeholder="..."))
+    title_text, title_lines = _header_text(
+        title,
+        wrap_width=HEADER_TITLE_WRAP,
+        max_lines=HEADER_TITLE_MAX_LINES,
+    )
+    point_text, point_lines = _header_text(
+        main_point,
+        wrap_width=HEADER_POINT_WRAP,
+        max_lines=HEADER_POINT_MAX_LINES,
+    )
+
+    title_y = HEADER_BOX_Y + 28
+    line_gap = 6
+    point_y = title_y + (max(1, title_lines) * (HEADER_TITLE_SIZE + line_gap)) + 8
 
     return (
         video_stream.filter(
@@ -133,20 +158,22 @@ def _add_persistent_header(video_stream, title: str, main_point: str):
             fontcolor="0xFFE08A",
             fontsize=HEADER_TITLE_SIZE,
             x=HEADER_BOX_X + 28,
-            y=HEADER_BOX_Y + 34,
+            y=title_y,
             font="Sans Bold",
             borderw=2,
             bordercolor="0x101010",
+            line_spacing=10,
         )
         .drawtext(
             text=point_text,
             fontcolor="white",
             fontsize=HEADER_POINT_SIZE,
             x=HEADER_BOX_X + 28,
-            y=HEADER_BOX_Y + 98,
+            y=point_y,
             font="Sans",
             borderw=2,
             bordercolor="0x101010",
+            line_spacing=8,
         )
     )
 
