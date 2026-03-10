@@ -15,7 +15,8 @@ dist/
 build/
 
 # Media & generated files
-media/backgrounds/
+!media/backgrounds/
+!media/backgrounds/channel_bg.mp4
 *.mp4
 *.mp3
 *.wav
