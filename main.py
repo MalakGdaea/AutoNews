@@ -1,4 +1,5 @@
 import argparse
+import os
 import re
 from typing import Dict, Optional
 
@@ -59,6 +60,9 @@ def run_once(
     if not video_path:
         raise RuntimeError("Video generation failed.")
 
+    # Clean up audio file
+    os.remove(audio_path)
+
     storage_url = upload_video_to_storage(video_path, filename)
     log_video(
         title=title,
@@ -91,9 +95,12 @@ def run_once(
         )
         mark_story_used(story_url, title)
 
+        # Clean up local video file
+        os.remove(video_path)
+
         return {
             "title": title,
-            "video_path": video_path,
+            "video_path": storage_url or video_path,
             "status": status,
             "caption": caption,
         }

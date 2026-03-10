@@ -55,6 +55,9 @@ def run_full_pipeline():
                 print(f"❌ Video failed for: {result['title'][:50]}")
                 continue
 
+            # Clean up audio file
+            os.remove(audio_path)
+
             # Step 4 — Upload to storage
             storage_url = upload_video_to_storage(video_path, filename)
 
@@ -67,7 +70,10 @@ def run_full_pipeline():
                 video_url=storage_url
             )
 
-            print(f"\n✅ Video ready: {video_path}")
+            # Clean up local video file
+            os.remove(video_path)
+
+            print(f"\n✅ Video ready: {storage_url or video_path}")
             print(f"📱 Caption: {result['caption']}")
 
     except Exception as e:
