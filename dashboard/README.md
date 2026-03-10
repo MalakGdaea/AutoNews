@@ -47,6 +47,7 @@ Reads from Supabase table `videos`:
 - `title`
 - `script`
 - `video_path`
+- `video_url`
 - `status`
 - `created_at`
 
@@ -66,5 +67,6 @@ The dashboard uses key `conflict_topics` in this table, and `agent/monitor.py` r
 
 ## Notes
 
-- Local video preview is served from `${PROJECT_ROOT}/output` only.
+- Video preview prefers `video_url` (Supabase Storage).
+- Local preview is served from `${PROJECT_ROOT}/output` only.
 - If `video_path` points outside `output/`, preview is blocked for safety.

@@ -63,7 +63,9 @@ export default function ReadyToUploadTable({ initialItems }) {
                     Preview unavailable
                   </div>
                 )}
-                <p className="mt-3 break-all font-[var(--font-mono)] text-xs text-muted">{item.videoPath || "No file path"}</p>
+                <p className="mt-3 break-all font-[var(--font-mono)] text-xs text-muted">
+                  {item.videoUrl || item.videoPath || "No file path"}
+                </p>
               </div>
 
               <div className="space-y-3">
@@ -79,7 +81,7 @@ export default function ReadyToUploadTable({ initialItems }) {
                 </div>
                 <div className="flex flex-wrap gap-2">
                   <CopyButton text={buildUploadPackage(item)} label="Copy Caption" />
-                  <CopyButton text={item.videoPath || ""} label="Copy Video Path" />
+                  <CopyButton text={item.videoUrl || item.videoPath || ""} label="Copy Video URL" />
                   <button
                     type="button"
                     onClick={() => markManualUploaded(item.id)}

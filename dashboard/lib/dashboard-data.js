@@ -10,16 +10,18 @@ function splitCaptionAndTags(rawTitle = "") {
 
 function normalizeVideoRow(row) {
   const { caption, hashtags } = splitCaptionAndTags(row.title || "");
+  const videoUrl = row.video_url || "";
   return {
     id: row.id,
     title: row.title || "Untitled",
     script: row.script || "",
     videoPath: row.video_path || "",
+    videoUrl,
     status: row.status || "unknown",
     createdAt: row.created_at,
     caption: caption || row.title || "",
     hashtags,
-    previewUrl: row.video_path ? `/api/videos/file?path=${encodeURIComponent(row.video_path)}` : ""
+    previewUrl: videoUrl || (row.video_path ? `/api/videos/file?path=${encodeURIComponent(row.video_path)}` : "")
   };
 }
 
@@ -27,7 +29,7 @@ export async function getDashboardData() {
   const supabase = getSupabaseServerClient();
   const { data, error } = await supabase
     .from("videos")
-    .select("id,title,script,video_path,status,created_at")
+    .select("id,title,script,video_path,video_url,status,created_at")
     .order("created_at", { ascending: false })
     .limit(250);
 

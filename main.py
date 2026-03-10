@@ -7,6 +7,7 @@ from agent.writer import write_caption, write_script
 from config import TIKTOK_ACCESS_TOKEN, TIKTOK_DRY_RUN
 from db.models import log_video, mark_story_used
 from media.audio import generate_voiceover
+from media.storage import upload_video_to_storage
 from media.video import generate_video
 from tiktok.uploader import TikTokUploadError, upload_video
 
@@ -58,7 +59,14 @@ def run_once(
     if not video_path:
         raise RuntimeError("Video generation failed.")
 
-    log_video(title=title, script=script, video_path=video_path, status="generated")
+    storage_url = upload_video_to_storage(video_path, filename)
+    log_video(
+        title=title,
+        script=script,
+        video_path=video_path,
+        status="generated",
+        video_url=storage_url,
+    )
 
     try:
         upload_result = upload_video(
@@ -74,7 +82,13 @@ def run_once(
         if upload_result.get("dry_run"):
             status = "upload_dry_run"
 
-        log_video(title=title, script=script, video_path=video_path, status=status)
+        log_video(
+            title=title,
+            script=script,
+            video_path=video_path,
+            status=status,
+            video_url=storage_url,
+        )
         mark_story_used(story_url, title)
 
         return {

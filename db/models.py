@@ -63,17 +63,25 @@ def mark_story_used(url: str, title: str):
         print(f"DB error: {exc}")
 
 
-def log_video(title: str, script: str, video_path: str, status: str = "saved"):
+def log_video(
+    title: str,
+    script: str,
+    video_path: str,
+    status: str = "saved",
+    video_url: str | None = None,
+):
     try:
-        supabase.table("videos").insert(
-            {
-                "title": title,
-                "script": script,
-                "video_path": video_path,
-                "status": status,
-                "created_at": datetime.utcnow().isoformat(),
-            }
-        ).execute()
+        payload = {
+            "title": title,
+            "script": script,
+            "video_path": video_path,
+            "status": status,
+            "created_at": datetime.utcnow().isoformat(),
+        }
+        if video_url:
+            payload["video_url"] = video_url
+
+        supabase.table("videos").insert(payload).execute()
     except Exception as exc:
         print(f"DB log error: {exc}")
 
