@@ -266,11 +266,8 @@ def generate_video(
                t=duration,
            ).run(quiet=True, capture_stderr=True, overwrite_output=True)
         except ffmpeg.Error as ffmpeg_exc:
-            try:
-                stderr = ffmpeg_exc.stderr.decode("utf-8", errors="ignore")
-            except Exception:
-                stderr = str(ffmpeg_exc)
-            print(f"FFmpeg stderr: {stderr}")
+            stderr = ffmpeg_exc.stderr.decode("utf-8", errors="ignore") if ffmpeg_exc.stderr else "no stderr"
+            print(f"FFmpeg FULL ERROR:\n{stderr}")
             raise
         finally:
             if image_path and os.path.exists(image_path):
