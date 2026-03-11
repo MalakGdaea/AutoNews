@@ -64,13 +64,6 @@ def run_once(
     os.remove(audio_path)
 
     storage_url = upload_video_to_storage(video_path, filename)
-    log_video(
-        title=title,
-        script=script,
-        video_path=storage_url or video_path,
-        status="generated",
-        video_url=storage_url,
-    )
 
     try:
         upload_result = upload_video(
