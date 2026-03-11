@@ -132,7 +132,7 @@ def _add_branding(video_stream):
             y=1770,
             font=FONT_REGULAR,
         )
-        .drawtext(text="LIVE", fontcolor="white", fontsize=28, x=40, y=1778, font="Sans")
+        .drawtext(text="LIVE", fontcolor="white", fontsize=28, x=40, y=1778, font=FONT_REGULAR)
     )
 
 
