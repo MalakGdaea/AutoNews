@@ -264,7 +264,7 @@ def generate_video(
                pix_fmt="yuv420p",
                movflags="+faststart",
                t=duration,
-           ).run(quiet=True, capture_stderr=True, overwrite_output=True)
+           ).run(quiet=True, capture_stderr=False, overwrite_output=False)
         except ffmpeg.Error as ffmpeg_exc:
             stderr = ffmpeg_exc.stderr.decode("utf-8", errors="ignore") if ffmpeg_exc.stderr else "no stderr"
             print(f"FFmpeg FULL ERROR:\n{stderr}")
