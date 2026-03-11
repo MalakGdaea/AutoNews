@@ -70,8 +70,9 @@ def run_full_pipeline():
                 video_url=storage_url
             )
 
-            # Clean up local video file
-            os.remove(video_path)
+            # Clean up local video file if uploaded successfully
+            if storage_url:
+                os.remove(video_path)
 
             print(f"\n✅ Video ready: {storage_url or video_path}")
             print(f"📱 Caption: {result['caption']}")

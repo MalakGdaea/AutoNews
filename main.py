@@ -95,8 +95,9 @@ def run_once(
         )
         mark_story_used(story_url, title)
 
-        # Clean up local video file
-        os.remove(video_path)
+        # Clean up local video file if uploaded successfully
+        if storage_url:
+            os.remove(video_path)
 
         return {
             "title": title,
