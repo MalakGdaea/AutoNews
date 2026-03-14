@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { createSupabaseServerClient } from "@/lib/supabaseServer";
 
-const PUBLIC_PATHS = ["/login", "/auth/callback"];
+const PUBLIC_PATHS = ["/login", "/auth/tiktok"];
 function isPublicRoute(pathname) {
   return PUBLIC_PATHS.some((path) => pathname.startsWith(path));
 }

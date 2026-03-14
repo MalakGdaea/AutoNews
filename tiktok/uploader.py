@@ -6,6 +6,8 @@ from typing import Any, Dict, List, Optional
 
 import requests
 
+from tiktok.auth import TikTokAuthError, get_valid_access_token
+
 TIKTOK_API_BASE = "https://open.tiktokapis.com"
 MIN_CHUNK_BYTES = 5 * 1024 * 1024
 MAX_CHUNK_BYTES = 64 * 1024 * 1024
@@ -287,6 +289,11 @@ def upload_video(
     wait_for_completion: bool = True,
 ) -> Dict[str, Any]:
     token = access_token or os.getenv("TIKTOK_ACCESS_TOKEN")
+    if not token and not dry_run:
+        try:
+            token = get_valid_access_token()
+        except TikTokAuthError as exc:
+            raise TikTokUploadError(str(exc)) from exc
     if not token and not dry_run:
         raise TikTokUploadError(
             "Missing TIKTOK_ACCESS_TOKEN. Set it in env or pass access_token."

@@ -28,6 +28,9 @@ npm install
 NEXT_PUBLIC_SUPABASE_URL=...
 NEXT_PUBLIC_SUPABASE_ANON_KEY=...
 SUPABASE_SERVICE_ROLE_KEY=...
+TIKTOK_CLIENT_KEY=...
+TIKTOK_CLIENT_SECRET=...
+TIKTOK_REDIRECT_URI=https://auto-news-dashboard.vercel.app/auth/tiktok
 PROJECT_ROOT=C:/Users/malak/Desktop/AutoNews
 ```
 
@@ -69,6 +72,27 @@ The dashboard uses key `conflict_topics` in this table, and `agent/monitor.py` r
 
 1. In Supabase Auth, enable **Email** provider (with password).
 2. Add approved users in Supabase Auth (email/password).
+
+## TikTok OAuth (Content Posting API)
+
+1. Add the TikTok credentials to your dashboard environment (`TIKTOK_CLIENT_KEY`, `TIKTOK_CLIENT_SECRET`, `TIKTOK_REDIRECT_URI`).
+2. Create the token storage table in Supabase:
+
+```sql
+create table if not exists public.tiktok_tokens (
+  id text primary key,
+  access_token text,
+  refresh_token text,
+  expires_at timestamptz,
+  refresh_expires_at timestamptz,
+  scope text,
+  token_type text,
+  open_id text,
+  updated_at timestamptz
+);
+```
+
+3. Visit `/auth/tiktok/start` while signed in to complete OAuth and store tokens.
 
 ## Notes
 
