@@ -1,10 +1,12 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 import { createSupabaseBrowserClient } from "@/lib/supabaseClient";
 
 export default function AuthStatus() {
   const [supabase, setSupabase] = useState(null);
+  const router = useRouter();
   const [userEmail, setUserEmail] = useState("");
   const [isLoading, setIsLoading] = useState(true);
 
@@ -26,6 +28,9 @@ export default function AuthStatus() {
       if (!isMounted) return;
       setUserEmail(session?.user?.email ?? "");
       setIsLoading(false);
+      if (!session?.user) {
+        router.replace("/login");
+      }
     });
 
     return () => {
@@ -37,6 +42,9 @@ export default function AuthStatus() {
   const handleSignOut = async () => {
     if (!supabase) return;
     await supabase.auth.signOut();
+    setUserEmail("");
+    setIsLoading(false);
+    router.replace("/login");
   };
 
   return (
