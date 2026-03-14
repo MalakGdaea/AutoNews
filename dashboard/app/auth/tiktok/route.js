@@ -1,6 +1,8 @@
 import { NextResponse } from "next/server";
 import { saveTikTokTokens } from "@/lib/tiktokTokens";
 
+export const dynamic = "force-dynamic";
+
 const TOKEN_URL = "https://open.tiktokapis.com/v2/oauth/token/";
 
 function requireEnv(name) {

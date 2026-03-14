@@ -1,6 +1,8 @@
 import { NextResponse } from "next/server";
 import crypto from "node:crypto";
 
+export const dynamic = "force-dynamic";
+
 const AUTH_URL = "https://www.tiktok.com/v2/auth/authorize/";
 const SCOPES = "video.publish,video.upload";
 
