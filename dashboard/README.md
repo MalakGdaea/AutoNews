@@ -65,6 +65,11 @@ create table if not exists public.pipeline_settings (
 
 The dashboard uses key `conflict_topics` in this table, and `agent/monitor.py` reads the same record before selecting stories.
 
+## Auth setup
+
+1. In Supabase Auth, enable **Email** provider (with password).
+2. Add approved users in Supabase Auth (email/password).
+
 ## Notes
 
 - Video preview prefers `video_url` (Supabase Storage).

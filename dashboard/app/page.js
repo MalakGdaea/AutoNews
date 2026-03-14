@@ -3,6 +3,7 @@ import ReadyToUploadTable from "@/components/ReadyToUploadTable";
 import StatCard from "@/components/StatCard";
 import StatusPieChart from "@/components/StatusPieChart";
 import TopicManager from "@/components/TopicManager";
+import AuthStatus from "@/components/AuthStatus";
 import { getDashboardData } from "@/lib/dashboard-data";
 
 function EmptyState({ message }) {
@@ -26,8 +27,13 @@ export default async function HomePage() {
   return (
     <div className="space-y-6">
       <header className="animate-rise rounded-2xl border border-zinc-700/60 bg-black/20 px-4 py-5 md:px-6">
-        <p className="font-[var(--font-mono)] text-xs uppercase tracking-[0.2em] text-muted">AutoNews Ops</p>
-        <h1 className="mt-2 text-2xl font-semibold md:text-4xl">Manual Upload Dashboard</h1>
+        <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
+          <div>
+            <p className="font-[var(--font-mono)] text-xs uppercase tracking-[0.2em] text-muted">AutoNews Ops</p>
+            <h1 className="mt-2 text-2xl font-semibold md:text-4xl">Manual Upload Dashboard</h1>
+          </div>
+          <AuthStatus />
+        </div>
         <p className="mt-2 max-w-3xl text-sm text-zinc-300">
           Monitor generated posts, copy captions and hashtags, preview videos, and manually upload to TikTok from one place.
         </p>
