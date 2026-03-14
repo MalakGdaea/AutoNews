@@ -1,13 +1,13 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { createSupabaseBrowserClient } from "@/lib/supabaseClient";
 
 const DEFAULT_REDIRECT = "/";
 
 export default function LoginPage() {
-  const supabase = useMemo(() => createSupabaseBrowserClient(), []);
+  const [supabase, setSupabase] = useState(null);
   const router = useRouter();
   const searchParams = useSearchParams();
   const [email, setEmail] = useState("");
@@ -18,8 +18,16 @@ export default function LoginPage() {
   const redirectTo = searchParams.get("next") || DEFAULT_REDIRECT;
   const errorParam = searchParams.get("error");
 
+  useEffect(() => {
+    setSupabase(createSupabaseBrowserClient());
+  }, []);
+
   const handleSubmit = async (event) => {
     event.preventDefault();
+    if (!supabase) {
+      setStatus({ type: "error", message: "Supabase client not ready. Please try again." });
+      return;
+    }
     setIsSubmitting(true);
     setStatus({ type: "idle", message: "" });
 
