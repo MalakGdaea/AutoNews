@@ -5,6 +5,8 @@ from pathlib import Path
 from typing import Any, Dict, List, Optional
 
 import requests
+from requests.adapters import HTTPAdapter
+from urllib3.util.retry import Retry
 
 from tiktok.auth import TikTokAuthError, get_valid_access_token
 
@@ -57,15 +59,44 @@ class TikTokUploader:
             "Content-Type": "application/json; charset=UTF-8",
         }
 
+    def _get_session(self) -> requests.Session:
+        """Create a requests session with retry logic for network issues."""
+        session = requests.Session()
+        retry = Retry(
+            total=3,
+            backoff_factor=1,
+            status_forcelist=[500, 502, 503, 504],
+            allowed_methods=["POST", "GET"]
+        )
+        adapter = HTTPAdapter(max_retries=retry)
+        session.mount("https://", adapter)
+        session.mount("http://", adapter)
+        return session
+
     def _post_json(self, path: str, payload: Dict[str, Any]) -> Dict[str, Any]:
         url = f"{TIKTOK_API_BASE}{path}"
-        response = requests.post(
+        session = self._get_session()
+        response = session.post(
             url,
             headers=self._headers(),
             json=payload,
             timeout=self.timeout_seconds,
         )
-        response.raise_for_status()
+
+        # Better error handling - check response before raising
+        if not response.ok:
+            try:
+                error_data = response.json()
+                error_msg = error_data.get("error", {})
+                if isinstance(error_msg, dict):
+                    raise TikTokUploadError(
+                        f"TikTok API error {error_msg.get('code')}: {error_msg.get('message')} (HTTP {response.status_code})"
+                    )
+                else:
+                    raise TikTokUploadError(f"TikTok API error: {error_data} (HTTP {response.status_code})")
+            except ValueError:
+                raise TikTokUploadError(f"TikTok API HTTP {response.status_code}: {response.text}")
+
         data = response.json()
         error = data.get("error", {})
         if error.get("code") not in (None, "", "ok"):
@@ -263,6 +294,9 @@ class TikTokUploader:
             result["status"] = status or "UNKNOWN"
             result["status_payload"] = status_payload
 
+            print(f"📊 TikTok status: {status}")
+            print(f"📋 Full payload: {status_payload}")
+
             if status in {"PUBLISH_COMPLETE", "PUBLISHED", "SUCCESS"}:
                 return result
             if status == "FAILED":
@@ -291,7 +325,9 @@ def upload_video(
     token = access_token or os.getenv("TIKTOK_ACCESS_TOKEN")
     if not token and not dry_run:
         try:
+            print("🔑 Fetching TikTok access token from database...")
             token = get_valid_access_token()
+            print(f"✅ Got access token: {token[:20]}..." if token else "❌ No token received")
         except TikTokAuthError as exc:
             raise TikTokUploadError(str(exc)) from exc
     if not token and not dry_run:
