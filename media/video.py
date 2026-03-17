@@ -16,13 +16,13 @@ VIDEO_HEIGHT = 1920
 HEADER_BOX_X = 70
 HEADER_BOX_Y = 160
 HEADER_BOX_W = 940
-HEADER_BOX_H = 190
+HEADER_BOX_H = 220
 HEADER_TITLE_SIZE = 48
 HEADER_POINT_SIZE = 40
 HEADER_TITLE_WRAP = 28
 HEADER_POINT_WRAP = 36
 HEADER_TITLE_MAX_LINES = 2
-HEADER_POINT_MAX_LINES = 2
+HEADER_POINT_MAX_LINES = 4
 
 # Lower-third captions
 CAPTION_Y = 1270
@@ -60,13 +60,11 @@ def _clean_title_from_filename(filename: str) -> str:
     return " ".join(filename.replace("_", " ").split()).title()
 
 
-def _extract_main_point(script: str, max_words: int = 9) -> str:
+def _extract_main_point(script: str) -> str:
     if not script.strip():
         return "Top Story Update"
     first_sentence = re.split(r"(?<=[.!?])\s+", script.strip())[0]
-    words = first_sentence.split()
-    short = " ".join(words[:max_words]).strip()
-    return short.rstrip(".,!?") if short else "Top Story Update"
+    return first_sentence.rstrip(".,!?") if first_sentence else "Top Story Update"
 
 
 def _header_text(text: str, *, wrap_width: int, max_lines: int) -> tuple[str, int]:
@@ -136,21 +134,14 @@ def _add_branding(video_stream):
     )
 
 
-def _add_persistent_header(video_stream, title: str, main_point: str):
-    title_text, title_lines = _header_text(
-        title,
-        wrap_width=HEADER_TITLE_WRAP,
-        max_lines=HEADER_TITLE_MAX_LINES,
-    )
-    point_text, point_lines = _header_text(
-        main_point,
+def _add_persistent_header(video_stream, header_text: str):
+    text, lines = _header_text(
+        header_text,
         wrap_width=HEADER_POINT_WRAP,
         max_lines=HEADER_POINT_MAX_LINES,
     )
 
-    title_y = HEADER_BOX_Y + 28
-    line_gap = 6
-    point_y = title_y + (max(1, title_lines) * (HEADER_TITLE_SIZE + line_gap)) + 8
+    y = HEADER_BOX_Y + 28
 
     return (
         video_stream.filter(
@@ -163,22 +154,11 @@ def _add_persistent_header(video_stream, title: str, main_point: str):
             t="fill",
         )
         .drawtext(
-            text=title_text,
-            fontcolor="0xFFE08A",
-            fontsize=HEADER_TITLE_SIZE,
-            x=HEADER_BOX_X + 28,
-            y=title_y,
-            font=FONT_BOLD,
-            borderw=2,
-            bordercolor="0x101010",
-            line_spacing=10,
-        )
-        .drawtext(
-            text=point_text,
-            fontcolor="white",
+            text=text,
+            fontcolor="red",
             fontsize=HEADER_POINT_SIZE,
             x=HEADER_BOX_X + 28,
-            y=point_y,
+            y=y,
             font=FONT_REGULAR,
             borderw=2,
             bordercolor="0x101010",
@@ -243,7 +223,7 @@ def generate_video(
 
         header_title = title or _clean_title_from_filename(filename)
         header_point = _extract_main_point(script)
-        bg_video = _add_persistent_header(bg_video, header_title, header_point)
+        bg_video = _add_persistent_header(bg_video, header_point)
 
         bg_video = _add_captions(bg_video, script, duration)
 
