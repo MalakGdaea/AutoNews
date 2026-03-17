@@ -9,7 +9,6 @@ CAPTION_MAX_LINES = 3
 def escape_drawtext(text: str) -> str:
     escaped = text.replace("\\", "\\\\")
     escaped = escaped.replace(":", "\\:")
-    escaped = escaped.replace("'", "\\'")
     escaped = escaped.replace("%", "\\%")
     return escaped
 

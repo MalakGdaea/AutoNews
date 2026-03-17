@@ -79,7 +79,7 @@ def run_full_pipeline():
                     caption=result["caption"],
                     hashtags=None,
                     access_token=TIKTOK_ACCESS_TOKEN,
-                    dry_run=TIKTOK_DRY_RUN,
+                    dry_run=False,
                     privacy_level="SELF_ONLY",
                     wait_for_completion=True,
                 )
