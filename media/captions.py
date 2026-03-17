@@ -7,8 +7,27 @@ CAPTION_MAX_LINES = 3
 
 
 def escape_drawtext(text: str) -> str:
-    escaped = text.replace("\u2026", "...")  # ellipsis → three dots
-    escaped = text.replace("\\", "\\\\")
+    # Sanitize Unicode
+    replacements = {
+        "\u2026": "...",  # ellipsis
+        "\u2018": "'",    # left single quote
+        "\u2019": "'",    # right single quote
+        "\u201c": '"',    # left double quote
+        "\u201d": '"',    # right double quote
+        "\u2013": "-",    # en dash
+        "\u2014": "-",    # em dash
+        "\u00a0": " ",    # non-breaking space
+        "\u200b": "",     # zero-width space
+    }
+    escaped = text
+    for char, replacement in replacements.items():
+        escaped = escaped.replace(char, replacement)
+
+    # Strip remaining non-ASCII (emojis etc.)
+    escaped = escaped.encode("ascii", errors="ignore").decode("ascii")
+
+    # ffmpeg drawtext escaping
+    escaped = escaped.replace("\\", "\\\\")
     escaped = escaped.replace(":", "\\:")
     escaped = escaped.replace("%", "\\%")
     return escaped
