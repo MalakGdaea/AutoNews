@@ -27,8 +27,8 @@ HEADER_POINT_MAX_LINES = 4
 # Lower-third captions
 CAPTION_Y = 1270
 CAPTION_FONT_SIZE = 48
-FONT_REGULAR = "DejaVu Sans"
-FONT_BOLD = "DejaVu Sans Bold"
+FONT_REGULAR = "/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf"
+FONT_BOLD = "/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf"
 
 
 def download_image(url: str, filename: str) -> str:
@@ -144,15 +144,7 @@ def _add_persistent_header(video_stream, header_text: str):
     y = HEADER_BOX_Y + 28
 
     return (
-        video_stream.filter(
-            "drawbox",
-            x=HEADER_BOX_X,
-            y=HEADER_BOX_Y,
-            w=HEADER_BOX_W,
-            h=HEADER_BOX_H,
-            color="0xFF0000@0.85",
-            t="fill",
-        )
+        video_stream
         .drawtext(
             text=text,
             fontcolor="white",
@@ -163,6 +155,9 @@ def _add_persistent_header(video_stream, header_text: str):
             borderw=2,
             bordercolor="0x101010",
             line_spacing=10,
+            box=1,
+            boxcolor="0xFF0000@0.85",
+            boxborderw=10,
         )
     )
 
