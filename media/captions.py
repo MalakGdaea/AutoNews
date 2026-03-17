@@ -7,6 +7,7 @@ CAPTION_MAX_LINES = 3
 
 
 def escape_drawtext(text: str) -> str:
+    escaped = text.replace("\u2026", "...")  # ellipsis → three dots
     escaped = text.replace("\\", "\\\\")
     escaped = escaped.replace(":", "\\:")
     escaped = escaped.replace("%", "\\%")
