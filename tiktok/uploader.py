@@ -125,24 +125,28 @@ class TikTokUploader:
     def _get_chunk_params(file_size: int) -> Dict[str, int]:
         if file_size <= 0:
             raise TikTokUploadError("Video file is empty.")
-
-        if file_size < MIN_CHUNK_BYTES:
-            chunk_size = file_size
-        else:
-            chunk_size = min(max(DEFAULT_CHUNK_BYTES, MIN_CHUNK_BYTES), MAX_CHUNK_BYTES)
-            if chunk_size > file_size:
-                chunk_size = file_size
-
+    
+        # For files that fit in a single chunk, use 1 chunk
+        # TikTok rejects invalid chunk counts — don't force multiple chunks for small files
+        if file_size <= MAX_CHUNK_BYTES:
+            print(f"DEBUG: file_size={file_size}, chunk_size={file_size}, total_chunks=1")
+            return {"chunk_size": file_size, "total_chunks": 1}
+    
+        # For large files (>64MB), split into chunks
+        chunk_size = DEFAULT_CHUNK_BYTES
         total_chunks = math.ceil(file_size / chunk_size)
+    
         if total_chunks > 1000:
             chunk_size = math.ceil(file_size / 1000)
             chunk_size = min(max(chunk_size, MIN_CHUNK_BYTES), MAX_CHUNK_BYTES)
             total_chunks = math.ceil(file_size / chunk_size)
-
+    
         if total_chunks > 1000:
             raise TikTokUploadError("Video is too large for TikTok chunk upload limits.")
-
+    
+        print(f"DEBUG: file_size={file_size}, chunk_size={chunk_size}, total_chunks={total_chunks}")
         return {"chunk_size": chunk_size, "total_chunks": total_chunks}
+
 
     def init_direct_post(
         self,
