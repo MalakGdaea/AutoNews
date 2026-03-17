@@ -150,19 +150,19 @@ def _add_persistent_header(video_stream, header_text: str):
             y=HEADER_BOX_Y,
             w=HEADER_BOX_W,
             h=HEADER_BOX_H,
-            color="0x000000@0.45",
+            color="0xFF0000@0.85",
             t="fill",
         )
         .drawtext(
             text=text,
-            fontcolor="red",
+            fontcolor="white",
             fontsize=HEADER_POINT_SIZE,
-            x=HEADER_BOX_X + 28,
+            x=HEADER_BOX_X + 32,
             y=y,
-            font=FONT_REGULAR,
+            font=FONT_BOLD,
             borderw=2,
             bordercolor="0x101010",
-            line_spacing=8,
+            line_spacing=10,
         )
     )
 

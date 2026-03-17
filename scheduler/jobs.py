@@ -31,7 +31,8 @@ def run_full_pipeline():
 
     try:
         # Step 1 — Get scripts from agent
-        results = run_pipeline(limit=2)
+        # Only generate one video per run (every 4 hours)
+        results = run_pipeline(limit=1)
 
         if not results:
             print("😴 No fresh stories — skipping this run")
