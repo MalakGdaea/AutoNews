@@ -25,8 +25,10 @@ HEADER_TITLE_MAX_LINES = 2
 HEADER_POINT_MAX_LINES = 4
 
 # Lower-third captions
-CAPTION_Y = 1270
-CAPTION_FONT_SIZE = 48
+CAPTION_Y = 1550
+CAPTION_FONT_SIZE = 42
+CAPTION_LINE_SPACING = 14
+CAPTION_BOX_PADDING = 12
 FONT_REGULAR = "/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf"
 FONT_BOLD = "/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf"
 
@@ -185,8 +187,8 @@ def _add_captions(video_stream, script: str, duration: float):
             bordercolor="0x101010",
             box=1,
             boxcolor="0x000000@0.50",
-            boxborderw=14,
-            line_spacing=12,
+            boxborderw=CAPTION_BOX_PADDING,
+            line_spacing=CAPTION_LINE_SPACING,
             enable=f"between(t,{start_time:.2f},{end_time:.2f})",
         )
 
