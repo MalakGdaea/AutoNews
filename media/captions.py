@@ -1,4 +1,5 @@
 ﻿import textwrap
+import re
 
 CAPTION_WORDS_PER_CHUNK = 8
 CAPTION_START_DELAY = 0.35
@@ -7,7 +8,10 @@ CAPTION_MAX_LINES = 3
 
 
 def escape_drawtext(text: str) -> str:
-    # Sanitize Unicode
+    if not text:
+        return ""
+
+    # Normalize problematic unicode characters
     replacements = {
         "\u2026": "...",  # ellipsis
         "\u2018": "'",    # left single quote
@@ -18,20 +22,28 @@ def escape_drawtext(text: str) -> str:
         "\u2014": "-",    # em dash
         "\u00a0": " ",    # non-breaking space
         "\u200b": "",     # zero-width space
+        "\ufeff": "",     # BOM
+        "\r": "",         # carriage return
     }
-    escaped = text
+
     for char, replacement in replacements.items():
-        escaped = escaped.replace(char, replacement)
+        text = text.replace(char, replacement)
 
-    # Strip remaining non-ASCII (emojis etc.)
-    escaped = escaped.encode("ascii", errors="ignore").decode("ascii")
+    # 🚨 Remove ALL control characters (critical fix)
+    text = re.sub(r"[\x00-\x1F\x7F]", "", text)
 
-    # ffmpeg drawtext escaping
-    escaped = escaped.replace("\\", "\\\\")
-    escaped = escaped.replace(":", "\\:")
-    escaped = escaped.replace("%", "\\%")
-    return escaped
+    # Convert to ASCII only (removes emojis, unsupported glyphs)
+    text = text.encode("ascii", errors="ignore").decode("ascii")
 
+    # Clean extra spaces
+    text = " ".join(text.split())
+
+    # Escape for FFmpeg drawtext
+    text = text.replace("\\", "\\\\")  # escape backslashes
+    text = text.replace(":", "\\:")    # escape colons
+    text = text.replace("%", "\\%")    # escape %
+
+    return text
 
 def caption_chunks(script: str, words_per_chunk: int = CAPTION_WORDS_PER_CHUNK) -> list[str]:
     words = script.split()
