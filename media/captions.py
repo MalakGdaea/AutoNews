@@ -51,10 +51,12 @@ def caption_chunks(script: str, words_per_chunk: int = CAPTION_WORDS_PER_CHUNK) 
 
 
 def caption_text(chunk: str, wrap_width: int = CAPTION_WRAP_WIDTH, max_lines: int = CAPTION_MAX_LINES) -> str:
-    lines = textwrap.wrap(" ".join(chunk.split()), width=wrap_width)
+    # First escape the text, then wrap the escaped version
+    escaped_text = escape_drawtext(chunk)
+    lines = textwrap.wrap(escaped_text, width=wrap_width)
     if not lines:
         return ""
-    return escape_drawtext("\n".join(lines[:max_lines]))
+    return "\n".join(lines[:max_lines])
 
 
 def caption_schedule(total_duration: float, chunk_count: int, start_delay: float = CAPTION_START_DELAY) -> list[tuple[float, float]]:
