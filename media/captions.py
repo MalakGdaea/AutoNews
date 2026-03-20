@@ -30,7 +30,7 @@ def escape_drawtext(text: str) -> str:
         text = text.replace(char, replacement)
 
     # 🚨 Remove ALL control characters (critical fix)
-    text = re.sub(r"[\x00-\x1F\x7F]", "", text)
+    text = re.sub(r"[^\x20-\x7E\n]", "", text)
 
     # Convert to ASCII only (removes emojis, unsupported glyphs)
     text = text.encode("ascii", errors="ignore").decode("ascii")
