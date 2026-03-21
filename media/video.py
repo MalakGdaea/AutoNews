@@ -6,7 +6,7 @@ import ffmpeg
 import requests
 
 from config import OUTPUT_DIR
-from media.captions import caption_chunks, caption_schedule, caption_text, escape_drawtext
+from media.captions import caption_chunks_by_chars, caption_schedule, caption_text, escape_drawtext
 
 BACKGROUND_PATH = "media/backgrounds/channel_bg.mp4"
 VIDEO_WIDTH = 1080
@@ -168,7 +168,7 @@ def _add_captions(video_stream, script: str, duration: float):
     if not script.strip():
         return video_stream
 
-    chunks = caption_chunks(script)
+    chunks = caption_chunks_by_chars(script, max_chars=30)
     schedule = caption_schedule(duration, len(chunks))
 
     for chunk, (start_time, end_time) in zip(chunks, schedule):
@@ -188,7 +188,7 @@ def _add_captions(video_stream, script: str, duration: float):
             box=1,
             boxcolor="0x000000@0.50",
             boxborderw=CAPTION_BOX_PADDING,
-            line_spacing=CAPTION_LINE_SPACING,
+            # line_spacing=CAPTION_LINE_SPACING,
             enable=f"between(t,{start_time:.2f},{end_time:.2f})",
         )
 
