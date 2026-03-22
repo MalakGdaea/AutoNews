@@ -149,4 +149,4 @@ def start_scheduler(interval_hours: int = 4):
         scheduler.shutdown()
 
 if __name__ == "__main__":
-    start_scheduler(interval_hours=4)
+    start_scheduler(interval_hours=6)  # Run every 6 hours (4 videos/day)
