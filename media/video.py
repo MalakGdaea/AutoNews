@@ -13,16 +13,16 @@ VIDEO_WIDTH = 1080
 VIDEO_HEIGHT = 1920
 
 # Persistent header (shown for full video)
-HEADER_BOX_X = 70
-HEADER_BOX_Y = 160
-HEADER_BOX_W = 940
+HEADER_BOX_X = 54
+HEADER_BOX_Y = 150
+HEADER_BOX_W = 972
 HEADER_BOX_H = 220
-HEADER_TITLE_SIZE = 48
-HEADER_POINT_SIZE = 40
-HEADER_TITLE_WRAP = 28
-HEADER_POINT_WRAP = 36
-HEADER_TITLE_MAX_LINES = 2
-HEADER_POINT_MAX_LINES = 4
+HEADER_TITLE_SIZE = 42
+HEADER_TITLE_WRAP = 40
+HEADER_TITLE_MAX_LINES = 4
+HEADER_PADDING_X = 24
+HEADER_PADDING_Y = 18
+HEADER_LINE_GAP = 10
 
 # Lower-third captions
 CAPTION_Y = 1550
@@ -62,11 +62,11 @@ def _clean_title_from_filename(filename: str) -> str:
     return " ".join(filename.replace("_", " ").split()).title()
 
 
-def _extract_main_point(script: str) -> str:
-    if not script.strip():
-        return "Top Story Update"
-    first_sentence = re.split(r"(?<=[.!?])\s+", script.strip())[0]
-    return first_sentence.rstrip(".,!?") if first_sentence else "Top Story Update"
+# def _extract_main_point(script: str) -> str:
+#     if not script.strip():
+#         return "Top Story Update"
+#     first_sentence = re.split(r"(?<=[.!?])\s+", script.strip())[0]
+#     return first_sentence.rstrip(".,!?") if first_sentence else "Top Story Update"
 
 
 def _header_text(text: str, *, wrap_width: int, max_lines: int) -> tuple[str, int]:
@@ -135,40 +135,57 @@ def _add_branding(video_stream):
         .drawtext(text="LIVE", fontcolor="white", fontsize=28, x=40, y=1778, font=FONT_REGULAR)
     )
 
-
 def _add_persistent_header(video_stream, header_text: str):
-    text, lines = _header_text(
-        header_text,
-        wrap_width=HEADER_POINT_WRAP,
-        max_lines=HEADER_POINT_MAX_LINES,
+    cleaned = " ".join(header_text.split())
+    raw_lines = textwrap.wrap(cleaned, width=HEADER_TITLE_WRAP, break_long_words=False)
+    if len(raw_lines) > HEADER_TITLE_MAX_LINES:
+        raw_lines = raw_lines[:HEADER_TITLE_MAX_LINES]
+        last = raw_lines[-1]
+        if len(last) > 3:
+            raw_lines[-1] = f"{last[:-3].rstrip()}..."
+        else:
+            raw_lines[-1] = "..."
+
+    if not raw_lines:
+        return video_stream
+
+    line_height = HEADER_TITLE_SIZE + HEADER_LINE_GAP
+    text_height = len(raw_lines) * line_height
+    box_height = max(HEADER_BOX_H, text_height + (HEADER_PADDING_Y * 2))
+    y_start = HEADER_BOX_Y + max(HEADER_PADDING_Y, (box_height - text_height) // 2)
+
+    # Draw one unified red rectangle behind all lines
+    video_stream = video_stream.filter(
+        "drawbox",
+        x=HEADER_BOX_X,
+        y=HEADER_BOX_Y,
+        w=HEADER_BOX_W,
+        h=box_height,
+        color="0xFF0000@0.85",
+        t="fill",
     )
 
-    y = HEADER_BOX_Y + 28
-
-    return (
-        video_stream
-        .drawtext(
-            text=text,
+    # Draw each line on top
+    for i, line in enumerate(raw_lines):
+        y = y_start + (i * line_height)
+        video_stream = video_stream.drawtext(
+            text=escape_drawtext(line),
             fontcolor="white",
-            fontsize=HEADER_POINT_SIZE,
-            x=HEADER_BOX_X + 32,
+            fontsize=HEADER_TITLE_SIZE,
+            x=HEADER_BOX_X + HEADER_PADDING_X,
             y=y,
             font=FONT_BOLD,
             borderw=2,
             bordercolor="0x101010",
-            line_spacing=10,
-            box=1,
-            boxcolor="0xFF0000@0.85",
-            boxborderw=10,
         )
-    )
 
+    return video_stream
 
 def _add_captions(video_stream, script: str, duration: float):
     if not script.strip():
         return video_stream
 
-    chunks = caption_chunks_by_chars(script, max_chars=30)
+    chunks = caption_chunks_by_chars(script, max_chars=35)
     schedule = caption_schedule(duration, len(chunks))
 
     for chunk, (start_time, end_time) in zip(chunks, schedule):
@@ -219,8 +236,8 @@ def generate_video(
         bg_video = _add_branding(bg_video)
 
         header_title = title or _clean_title_from_filename(filename)
-        header_point = _extract_main_point(script)
-        bg_video = _add_persistent_header(bg_video, header_point)
+        # header_point = _extract_main_point(script)
+        bg_video = _add_persistent_header(bg_video, header_title)
 
         bg_video = _add_captions(bg_video, script, duration)
 

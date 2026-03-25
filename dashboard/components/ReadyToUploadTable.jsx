@@ -10,16 +10,17 @@ function buildUploadPackage(item) {
 
 export default function ReadyToUploadTable({ initialItems }) {
   const [items, setItems] = useState(initialItems);
-  const [savingId, setSavingId] = useState(null);
+  const [uploadingId, setUploadingId] = useState(null);
+  const [deletingId, setDeletingId] = useState(null);
   const [error, setError] = useState("");
 
   const hasItems = useMemo(() => items.length > 0, [items.length]);
 
-  async function markManualUploaded(id) {
+  async function uploadToTikTok(id) {
     setError("");
-    setSavingId(id);
+    setUploadingId(id);
     try {
-      const res = await fetch(`/api/videos/${id}/mark-uploaded`, {
+      const res = await fetch(`/api/videos/${id}/upload`, {
         method: "PATCH"
       });
       const body = await res.json();
@@ -28,7 +29,24 @@ export default function ReadyToUploadTable({ initialItems }) {
     } catch (err) {
       setError(err.message);
     } finally {
-      setSavingId(null);
+      setUploadingId(null);
+    }
+  }
+
+  async function deleteVideo(id) {
+    setError("");
+    setDeletingId(id);
+    try {
+      const res = await fetch(`/api/videos/${id}`, {
+        method: "DELETE"
+      });
+      const body = await res.json();
+      if (!res.ok) throw new Error(body.error || "Failed to delete video");
+      setItems((prev) => prev.filter((item) => item.id !== id));
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setDeletingId(null);
     }
   }
 
@@ -84,11 +102,19 @@ export default function ReadyToUploadTable({ initialItems }) {
                   <CopyButton text={item.videoUrl || item.videoPath || ""} label="Copy Video URL" />
                   <button
                     type="button"
-                    onClick={() => markManualUploaded(item.id)}
-                    disabled={savingId === item.id}
+                    onClick={() => uploadToTikTok(item.id)}
+                    disabled={uploadingId === item.id || deletingId === item.id}
                     className="rounded-lg border border-accent/60 px-3 py-1.5 text-sm text-accent transition hover:bg-accent/10 disabled:opacity-60"
                   >
-                    {savingId === item.id ? "Saving..." : "Mark Uploaded"}
+                    {uploadingId === item.id ? "Uploading..." : "Upload"}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => deleteVideo(item.id)}
+                    disabled={deletingId === item.id || uploadingId === item.id}
+                    className="rounded-lg border border-danger/60 px-3 py-1.5 text-sm text-red-300 transition hover:bg-danger/10 disabled:opacity-60"
+                  >
+                    {deletingId === item.id ? "Deleting..." : "Delete"}
                   </button>
                 </div>
               </div>

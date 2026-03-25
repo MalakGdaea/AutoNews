@@ -1,16 +1,14 @@
 import argparse
 import os
 import re
-from typing import Dict, Optional
+from typing import Dict
 
 from agent.monitor import get_top_stories
 from agent.writer import write_caption, write_script
-from config import TIKTOK_ACCESS_TOKEN, TIKTOK_DRY_RUN
 from db.models import log_video, mark_story_used
 from media.audio import generate_voiceover
 from media.storage import upload_video_to_storage
 from media.video import generate_video
-from tiktok.uploader import TikTokUploadError, upload_video
 
 
 def slugify(text: str) -> str:
@@ -22,11 +20,7 @@ def slugify(text: str) -> str:
 def run_once(
     *,
     story_limit: int = 1,
-    dry_run: Optional[bool] = None,
-    privacy_level: str = "SELF_ONLY",
 ) -> Dict[str, str]:
-    effective_dry_run = TIKTOK_DRY_RUN if dry_run is None else dry_run
-
     stories = get_top_stories(limit=story_limit)
     if not stories:
         raise RuntimeError("No fresh stories found.")
@@ -68,83 +62,39 @@ def run_once(
         title=title,
         script=script,
         video_path=storage_url or video_path,
-        status="generated",
+        status="ready_to_upload",
         video_url=storage_url,
     )
 
-    try:
-        upload_result = upload_video(
-            video_path=video_path,
-            caption=caption,
-            hashtags=None,
-            access_token=TIKTOK_ACCESS_TOKEN,
-            dry_run=effective_dry_run,
-            privacy_level=privacy_level,
-            wait_for_completion=True,
-        )
-        status = upload_result.get("status", "uploaded")
-        if upload_result.get("dry_run"):
-            status = "upload_dry_run"
+    mark_story_used(story_url, title)
 
-        log_video(
-            title=title,
-            script=script,
-            video_path=storage_url or video_path,
-            status=status,
-            video_url=storage_url,
-        )
-        mark_story_used(story_url, title)
+    # Clean up local video file after storage upload.
+    if storage_url:
+        os.remove(video_path)
 
-        # Clean up local video file if uploaded successfully
-        if storage_url:
-            os.remove(video_path)
-
-        return {
-            "title": title,
-            "video_path": storage_url or video_path,
-            "status": status,
-            "caption": caption,
-        }
-    except TikTokUploadError as exc:
-        error_status = f"upload_failed: {exc}"
-        log_video(title=title, script=script, video_path=storage_url or video_path, status=error_status, video_url=storage_url)
-        raise
+    return {
+        "title": title,
+        "video_path": storage_url or video_path,
+        "status": "ready_to_upload",
+        "caption": caption,
+    }
 
 
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="AutoNews pipeline runner")
     parser.add_argument(
-        "--dry-run",
-        action="store_true",
-        help="Use TikTok uploader dry-run mode regardless of config.",
-    )
-    parser.add_argument(
-        "--live",
-        action="store_true",
-        help="Force live upload mode regardless of config.",
-    )
-    parser.add_argument(
-        "--privacy",
-        default="SELF_ONLY",
-        help="TikTok privacy level (default: SELF_ONLY).",
+        "--story-limit",
+        type=int,
+        default=1,
+        help="Number of fresh stories to generate in one run (default: 1).",
     )
     return parser.parse_args()
 
 
 def main() -> None:
     args = parse_args()
-    effective_dry_run = None
-    if args.dry_run and args.live:
-        raise ValueError("Use either --dry-run or --live, not both.")
-    if args.dry_run:
-        effective_dry_run = True
-    if args.live:
-        effective_dry_run = False
-
     result = run_once(
-        story_limit=1,
-        dry_run=effective_dry_run,
-        privacy_level=args.privacy,
+        story_limit=args.story_limit,
     )
     print(f"Done: {result['status']} -> {result['video_path']}")
 

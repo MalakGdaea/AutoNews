@@ -6,6 +6,10 @@ import TopicManager from "@/components/TopicManager";
 import AuthStatus from "@/components/AuthStatus";
 import { getDashboardData } from "@/lib/dashboard-data";
 
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
+export const fetchCache = "force-no-store";
+
 function EmptyState({ message }) {
   return (
     <section className="glass rounded-2xl p-5 shadow-panel">

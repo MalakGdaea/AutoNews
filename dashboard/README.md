@@ -10,7 +10,8 @@ Next.js 14 dashboard for monitoring generated posts and manually uploading ready
   - video preview
   - copy caption + hashtags
   - copy video path
-  - mark as manually uploaded
+  - upload to TikTok
+  - delete video from queue
 - Topic preferences panel (stored in browser localStorage)
 
 ## Setup
@@ -54,7 +55,7 @@ Reads from Supabase table `videos`:
 - `status`
 - `created_at`
 
-Manual upload action updates `status` to `manual_uploaded`.
+Upload action pushes the selected video to TikTok and updates the row status.
 
 For topic targeting, create `pipeline_settings` once:
 

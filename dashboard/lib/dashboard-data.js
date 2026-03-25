@@ -1,4 +1,5 @@
 import { getSupabaseServerClient } from "@/lib/supabaseAdmin";
+import { unstable_noStore as noStore } from "next/cache";
 
 const READY_STATUSES = new Set(["generated", "saved", "ready_to_upload", "upload_failed"]);
 
@@ -26,6 +27,7 @@ function normalizeVideoRow(row) {
 }
 
 export async function getDashboardData() {
+  noStore();
   const supabase = getSupabaseServerClient();
   const { data, error } = await supabase
     .from("videos")

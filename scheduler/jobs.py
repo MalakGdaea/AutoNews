@@ -14,8 +14,6 @@ from media.audio import generate_voiceover
 from media.video import generate_video
 from media.storage import upload_video_to_storage
 from db.models import log_video, mark_story_used
-from tiktok.uploader import TikTokUploadError, upload_video
-from config import TIKTOK_ACCESS_TOKEN, TIKTOK_DRY_RUN
 
 scheduler = BlockingScheduler()
 
@@ -52,7 +50,8 @@ def run_full_pipeline():
                 audio_path=audio_path,
                 filename=filename,
                 script=result["script"],
-                image_url=result.get("image_url")
+                image_url=result.get("image_url"),
+                title=result["title"],
             )
             if not video_path:
                 print(f"❌ Video failed for: {result['title'][:50]}")
@@ -69,45 +68,11 @@ def run_full_pipeline():
                 title=result["title"],
                 script=result["script"],
                 video_path=storage_url or video_path,
-                status="generated",
+                status="ready_to_upload",
                 video_url=storage_url
             )
 
-            # Step 6 — Upload to TikTok
-            try:
-                upload_result = upload_video(
-                    video_path=video_path,
-                    caption=result["caption"],
-                    hashtags=None,
-                    access_token=TIKTOK_ACCESS_TOKEN,
-                    dry_run=False,
-                    privacy_level="SELF_ONLY",
-                    wait_for_completion=True,
-                )
-                status = upload_result.get("status", "uploaded")
-                if upload_result.get("dry_run"):
-                    status = "upload_dry_run"
-
-                log_video(
-                    title=result["title"],
-                    script=result["script"],
-                    video_path=storage_url or video_path,
-                    status=status,
-                    video_url=storage_url,
-                )
-                mark_story_used(result.get("story_url"), result["title"])
-
-                print(f"\n✅ Video uploaded: {status}")
-            except TikTokUploadError as exc:
-                error_status = f"upload_failed: {exc}"
-                log_video(
-                    title=result["title"],
-                    script=result["script"],
-                    video_path=storage_url or video_path,
-                    status=error_status,
-                    video_url=storage_url
-                )
-                print(f"❌ TikTok upload failed: {exc}")
+            mark_story_used(result.get("story_url"), result["title"])
 
             # Clean up local video file if uploaded successfully
             if storage_url:
