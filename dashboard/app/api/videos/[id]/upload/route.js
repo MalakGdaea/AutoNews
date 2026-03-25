@@ -10,8 +10,7 @@ function getProjectRoot() {
     return path.basename(cwd).toLowerCase() === "dashboard" ? path.dirname(cwd) : cwd;
 }
 
-function runManualUpload(projectRoot, id) {
-    const pythonBin = process.env.PYTHON_BIN || "python3";
+function runManualUploadWithBinary(projectRoot, id, pythonBin) {
     return new Promise((resolve, reject) => {
         const child = spawn(pythonBin, ["-m", "tiktok.manual_upload", String(id)], {
             cwd: projectRoot,
@@ -39,6 +38,29 @@ function runManualUpload(projectRoot, id) {
             resolve(stdout);
         });
     });
+}
+
+async function runManualUpload(projectRoot, id) {
+    const requested = (process.env.PYTHON_BIN || "").trim();
+    const binaries = Array.from(new Set([requested, "python3", "python"].filter(Boolean)));
+    let lastError = null;
+
+    for (const bin of binaries) {
+        try {
+            return await runManualUploadWithBinary(projectRoot, id, bin);
+        } catch (error) {
+            const enoent = error && (error.code === "ENOENT" || String(error.message || "").includes("ENOENT"));
+            if (enoent) {
+                lastError = error;
+                continue;
+            }
+            throw error;
+        }
+    }
+
+    throw new Error(
+        `No Python executable found for upload worker. Tried: ${binaries.join(", ")}. Set PYTHON_BIN to an absolute interpreter path.`
+    );
 }
 
 function extractJsonMarker(output) {
