@@ -1,7 +1,7 @@
 version: '3.8'
 
 services:
-  autonews:
+  scheduler:
     build: .
     env_file:
       - .env
@@ -9,3 +9,14 @@ services:
       - ./output:/app/output
       - ./media:/app/media
     command: python scheduler/jobs.py
+
+  upload-api:
+    build: .
+    env_file:
+      - .env
+    volumes:
+      - ./output:/app/output
+      - ./media:/app/media
+    command: python api_server.py
+    ports:
+      - "8080:8080"
