@@ -1,81 +1,48 @@
-import { spawn } from "node:child_process";
-import path from "node:path";
 import { NextResponse } from "next/server";
 
-function getProjectRoot() {
-    if (process.env.PROJECT_ROOT) {
-        return path.resolve(process.env.PROJECT_ROOT);
+// Maximum time Vercel will wait for the Oracle worker (ms).
+// Increase if uploads regularly time out. Requires a Vercel Pro plan
+// for values above 10 000.
+export const maxDuration = 300;
+
+async function callOracleUpload(id) {
+    const baseUrl = (process.env.ORACLE_API_URL || "").replace(/\/$/, "");
+    const secret = process.env.ORACLE_API_SECRET || "";
+
+    if (!baseUrl) {
+        throw new Error(
+            "ORACLE_API_URL is not set. Add it to your Vercel environment variables " +
+            "(e.g. http://<oracle-ip>:8080)."
+        );
     }
-    const cwd = process.cwd();
-    return path.basename(cwd).toLowerCase() === "dashboard" ? path.dirname(cwd) : cwd;
-}
+    if (!secret) {
+        throw new Error(
+            "ORACLE_API_SECRET is not set. Add it to your Vercel environment variables."
+        );
+    }
 
-function runManualUploadWithBinary(projectRoot, id, pythonBin) {
-    return new Promise((resolve, reject) => {
-        const child = spawn(pythonBin, ["-m", "tiktok.manual_upload", String(id)], {
-            cwd: projectRoot,
-            env: process.env,
-            stdio: ["ignore", "pipe", "pipe"],
-        });
-
-        let stdout = "";
-        let stderr = "";
-
-        child.stdout.on("data", (chunk) => {
-            stdout += chunk.toString();
-        });
-        child.stderr.on("data", (chunk) => {
-            stderr += chunk.toString();
-        });
-
-        child.on("error", (error) => reject(error));
-        child.on("close", (code) => {
-            if (code !== 0) {
-                const details = stderr.trim() || stdout.trim() || `Process exited with code ${code}`;
-                reject(new Error(details));
-                return;
-            }
-            resolve(stdout);
-        });
+    const url = `${baseUrl}/api/upload/${id}`;
+    const response = await fetch(url, {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json",
+            "X-API-Secret": secret,
+        },
     });
-}
 
-async function runManualUpload(projectRoot, id) {
-    const requested = (process.env.PYTHON_BIN || "").trim();
-    const binaries = Array.from(new Set([requested, "python3", "python"].filter(Boolean)));
-    let lastError = null;
-
-    for (const bin of binaries) {
-        try {
-            return await runManualUploadWithBinary(projectRoot, id, bin);
-        } catch (error) {
-            const enoent = error && (error.code === "ENOENT" || String(error.message || "").includes("ENOENT"));
-            if (enoent) {
-                lastError = error;
-                continue;
-            }
-            throw error;
-        }
-    }
-
-    throw new Error(
-        `No Python executable found for upload worker. Tried: ${binaries.join(", ")}. Set PYTHON_BIN to an absolute interpreter path.`
-    );
-}
-
-function extractJsonMarker(output) {
-    const line = output
-        .split(/\r?\n/)
-        .reverse()
-        .find((entry) => entry.startsWith("__JSON__"));
-
-    if (!line) return null;
-
+    let body;
     try {
-        return JSON.parse(line.slice("__JSON__".length));
+        body = await response.json();
     } catch {
-        return null;
+        const text = await response.text().catch(() => "");
+        throw new Error(`Oracle worker returned non-JSON (HTTP ${response.status}): ${text}`);
     }
+
+    if (!response.ok || body.ok === false) {
+        throw new Error(body.error || `Oracle worker HTTP ${response.status}`);
+    }
+
+    return body.result ?? null;
 }
 
 export async function PATCH(_request, { params }) {
@@ -85,10 +52,8 @@ export async function PATCH(_request, { params }) {
     }
 
     try {
-        const projectRoot = getProjectRoot();
-        const raw = await runManualUpload(projectRoot, id);
-        const payload = extractJsonMarker(raw);
-        return NextResponse.json({ ok: true, result: payload || null });
+        const result = await callOracleUpload(id);
+        return NextResponse.json({ ok: true, result });
     } catch (error) {
         return NextResponse.json({ error: error.message || "Upload failed." }, { status: 500 });
     }
