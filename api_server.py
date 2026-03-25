@@ -13,8 +13,10 @@ Or with gunicorn for production:
 """
 
 import os
-
+from dotenv import load_dotenv
 from flask import Flask, jsonify, request
+
+load_dotenv()
 
 from tiktok.manual_upload import upload_video_by_id
 
