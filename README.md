@@ -237,25 +237,15 @@ The repository includes `deploy.sh` for a simple Docker-based deployment flow on
 
 ## Demo Video In The GitHub README
 
-If you want your demo to appear in the README on GitHub, the safest setup is:
+Use a repository thumbnail image linked to a hosted full-quality video.
 
-1. Put the original video in `docs/demo.mp4`
-2. Put a short preview GIF in `docs/demo.gif`
-3. Show the GIF in the README and link it to the video or to YouTube/Loom
-
-Why this structure:
-
-- GitHub repository READMEs reliably display images and GIFs
-- Local MP4 files in a repository are better treated as linked assets than as guaranteed inline players
-- `docs/` is a conventional place for README assets and keeps the root clean
-
-Example README snippet:
+Current setup:
 
 ```md
-[![Watch the demo](docs/demo.gif)](docs/demo.mp4)
+[![Watch the demo](docs/demo-thumbnail.png)](https://github.com/MalakGdaea/AutoNews/releases/download/v1.0.0/demo.mp4)
 ```
 
-If you prefer, you can also host the video externally and link the GIF thumbnail to that URL instead.
+This keeps the README lightweight while still giving one-click access to the full demo.
 
 ## Notes
 
@@ -270,4 +260,4 @@ The repository includes manual test scripts in `tests/` for pipeline and video g
 
 ## License
 
-Add your preferred license before publishing publicly.
+Licensed under the MIT License. See [LICENSE](LICENSE).
