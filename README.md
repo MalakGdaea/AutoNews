@@ -239,13 +239,9 @@ The repository includes `deploy.sh` for a simple Docker-based deployment flow on
 
 Use a repository thumbnail image linked to a hosted full-quality video.
 
-Current setup:
-
-```md
 [![Watch the demo](docs/demo-thumbnail.png)](https://github.com/MalakGdaea/AutoNews/releases/download/v1.0.0/demo.mp4)
-```
 
-This keeps the README lightweight while still giving one-click access to the full demo.
+Full video link: [demo.mp4](https://github.com/MalakGdaea/AutoNews/releases/download/v1.0.0/demo.mp4)
 
 ## Notes
 
